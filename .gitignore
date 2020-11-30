@@ -1,0 +1,6 @@
+/Debug
+/Release
+/Etc
+Thumbs.db
+*vcxproj*
+*.old

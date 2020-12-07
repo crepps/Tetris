@@ -85,9 +85,10 @@ class Framework
 
 	int m_nLevel,
 		m_nLines,
-		m_nScoreIncrement,
+		m_fScoreIncrement,
 		m_nRawTime,
-		m_nSeconds;
+		m_nSeconds,
+		m_nMenuSelect;
 
 	bool *m_pbGameOver,
 		m_bFlashing,
@@ -95,20 +96,18 @@ class Framework
 		m_abEndLines[18],
 		m_abGridFill[3];
 
-	float m_fAnimTimer,
+	float m_fScore,
+		m_fAnimTimer,
 		m_fBackRot,
 		m_fBackRotRate,
 		m_fBackRotBase,
 		m_fScoreAlpha,
 		m_fPauseAlpha,
-		m_fPauseTxtAlpha,
+		m_fPauseMenuAlpha,
 		m_fLineTimer,
 		m_fFlashTime,
-		m_fEndTimer;
-
-	float *m_pfPreviewColor;
-
-	float m_nScore;
+		m_fEndTimer,
+		*m_pfPreviewColor;
 
 	std::wstring m_sTime;
 
@@ -129,9 +128,11 @@ public:
 
 	bool KeyPress(int);
 
-	void Shutdown();
+	void Restart();
 
 	~Framework();
+
+	void Shutdown();
 };
 
 /*

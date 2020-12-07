@@ -228,7 +228,7 @@ void Grid::SpawnPiece()
 		{
 			m_bGameOver = true;
 
-			//m_bPieceDropped = false;
+			m_bPieceDropped = false;
 
 			return;
 		}
@@ -619,6 +619,19 @@ void Grid::ClearGrid()
 		for (int i = 0; i < 10; ++i)
 			m_aCells[i][j].type = Cell::TYPE::EM;
 	}
+}
+
+void Grid::Reset()
+{
+	ClearPiece();
+
+	ClearLines();
+
+	ClearGrid();
+
+	SpawnPiece();
+
+	SpawnPiece();
 }
 
 void Grid::Cheat()

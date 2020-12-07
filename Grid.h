@@ -109,5 +109,7 @@ public:
 
 	void ClearGrid();
 
+	void Reset();
+
 	void Cheat();
 };

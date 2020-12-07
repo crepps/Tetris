@@ -13,7 +13,7 @@ Framework::Framework()
 
 	m_bgCenter = D3DXVECTOR3(1024.0f, 1024.0f, 0.0f);
 
-	m_nLevel = m_nLines = m_nSeconds = 0;
+	m_nLevel = m_nLines = m_nSeconds = m_nMenuSelect = 0;
 
 	m_bFlashing = m_bPause = m_abGridFill[0] = m_abGridFill[1] = m_abGridFill[2] = false;
 
@@ -23,11 +23,11 @@ Framework::Framework()
 
 	m_fScoreAlpha = 150.0f;
 
-	m_fPauseTxtAlpha = 240.0f;
+	m_fPauseMenuAlpha = 240.0f;
 
 	m_fFlashTime = 1.0f;
 
-	m_nScore = 0.0f;
+	m_fScore = 0.0f;
 
 	m_sTime = L"0:00";
 
@@ -119,7 +119,7 @@ void Framework::Init(HWND& hWnd, HINSTANCE& hInst, Input* input, bool bWindowed)
 		OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT("Consolas"), &m_pD3DFont[3]);
 
 	// Pause menu
-	D3DXCreateFont(m_pD3DDevice, 80, 0, FW_BOLD, 0, false, DEFAULT_CHARSET,
+	D3DXCreateFont(m_pD3DDevice, 50, 0, FW_BOLD, 0, false, DEFAULT_CHARSET,
 		OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT("Intel Clear"), &m_pD3DFont[4]);
 
 	//////////////////////////////////////////////////////////////////////////
@@ -242,6 +242,7 @@ void Framework::Update(float dt)
 	// Update input object
 	m_pInput->Update();
 
+	// Pause menu
 	if (KeyPress(VK_ESCAPE) && !*m_pbGameOver)
 	{
 		m_bPause = m_bPause ? false : true;
@@ -250,20 +251,54 @@ void Framework::Update(float dt)
 
 		m_fScoreAlpha = 150.0f;
 
-		if (m_bPause)
+		if (!m_bPause)
 		{
-			Transition(&m_fPauseAlpha, 0.0f, 130.0f, 1000.0f);
+			Transition(&m_fPauseAlpha, 130.0f, 0.0f, 1000.0f);
 
-			Transition(&m_fPauseTxtAlpha, 240.0, 50.0f, 1000.0f);
+			Transition(&m_fPauseMenuAlpha, 50.0f, 240.0f, 1000.0f);
+
+			*m_pfPreviewColor = 255.0f;
 		}
 
 		else
 		{
-			Transition(&m_fPauseAlpha, 130.0f, 0.0f, 1000.0f);
+			Transition(&m_fPauseAlpha, 0.0f, 130.0f, 1000.0f);
 
-			Transition(&m_fPauseTxtAlpha, 50.0f, 240.0f, 1000.0f);
+			Transition(&m_fPauseMenuAlpha, 240.0, 50.0f, 1000.0f);
+		}
+	}
 
-			*m_pfPreviewColor = 255.0f;
+	if (m_bPause)
+	{
+		if (KeyPress(VK_DOWN) && m_nMenuSelect < 2)
+			++m_nMenuSelect;
+
+		if (KeyPress(VK_UP) && m_nMenuSelect > 0)
+			--m_nMenuSelect;
+
+		if (KeyPress(VK_RETURN) || KeyPress(VK_SPACE))
+		{
+			switch (m_nMenuSelect)
+			{
+			case 1:
+				Restart();
+
+				Transition(&m_fPauseAlpha, 130.0f, 0.0f, 1000.0f);
+
+				Transition(&m_fPauseMenuAlpha, 50.0f, 240.0f, 1000.0f);
+
+				*m_pfPreviewColor = 255.0f;
+
+			case 0:
+				m_nMenuSelect = 0;
+
+				m_bPause = false;
+
+				break;
+
+			case 2:
+				PostQuitMessage(0);
+			}
 		}
 	}
 
@@ -275,7 +310,7 @@ void Framework::Update(float dt)
 		{
 			++m_nLevel;
 
-			m_fBackRotRate = (float)((m_nLevel + 1.0f) * m_fBackRotBase);
+			m_fBackRotRate = (((float)m_nLevel + 1.0f) * m_fBackRotBase);
 		}
 
 		// Update time elapsed
@@ -292,7 +327,7 @@ void Framework::Update(float dt)
 			m_fLineTimer += dt * 0.0075f;
 
 			// Update background rotation speed based on level
-			m_fBackRotRate = (float)m_nLevel * m_fBackRotBase;
+			m_fBackRotRate = (m_nLevel ? (float)m_nLevel * m_fBackRotBase : m_fBackRotRate);
 
 			if ((int)m_fLineTimer % (int)m_fFlashTime == 0)
 			{
@@ -320,25 +355,25 @@ void Framework::Update(float dt)
 				switch (m_vLines.size())
 				{
 				case 1:
-					m_nScoreIncrement = 40 * (m_nLevel + 1);
+					m_fScoreIncrement = 40 * (m_nLevel + 1);
 
 					break;
 
 				case 2:
-					m_nScoreIncrement = 100 * (m_nLevel + 1);
+					m_fScoreIncrement = 100 * (m_nLevel + 1);
 
 					break;
 
 				case 3:
-					m_nScoreIncrement = 300 * (m_nLevel + 1);
+					m_fScoreIncrement = 300 * (m_nLevel + 1);
 
 					break;
 
 				case 4:
-					m_nScoreIncrement = 1200 * (m_nLevel + 1);
+					m_fScoreIncrement = 1200 * (m_nLevel + 1);
 				}
 
-				Transition(&m_nScore, m_nScore, m_nScore + m_nScoreIncrement, 8000.0f);
+				Transition(&m_fScore, m_fScore, m_fScore + m_fScoreIncrement, 8000.0f);
 
 				// Update level
 				if (m_nLevel < m_nLines / 10)
@@ -359,10 +394,10 @@ void Framework::Update(float dt)
 		// If no lines, handle input
 		else
 		{
-			if (KeyPress(VK_LEFT) || KeyPress('A'))
+			if (KeyPress(VK_LEFT))
 				m_grid.MovePiece(-1, 0);
 
-			else if (KeyPress(VK_RIGHT) || KeyPress('D'))
+			else if (KeyPress(VK_RIGHT))
 				m_grid.MovePiece(1, 0);
 
 			if (KeyPress(VK_UP))
@@ -375,7 +410,11 @@ void Framework::Update(float dt)
 				m_grid.Accelerate(false);
 
 			if (KeyPress(VK_SPACE))
+			{
 				m_grid.Cheat();
+
+				m_pfPreviewColor = m_grid.PreviewColor();
+			}
 		}
 
 		// Interrupt soft drop on piece dropped?
@@ -586,9 +625,9 @@ void Framework::Render()
 			m_textRect.top = 138;
 			m_textRect.left = 288;
 
-			swprintf_s(m_acTextBuffer, 64, L"%0*i", 10, (int)m_nScore);
+			swprintf_s(m_acTextBuffer, 64, L"%0*i", 10, (int)m_fScore);
 
-			m_pD3DFont[1]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_LEFT, D3DCOLOR_ARGB(!m_bPause ? (int)m_fScoreAlpha : (int)m_fPauseTxtAlpha, 200, 200, 200));
+			m_pD3DFont[1]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_LEFT, D3DCOLOR_ARGB(!m_bPause ? (int)m_fScoreAlpha : (int)m_fPauseMenuAlpha, 200, 200, 200));
 
 			// Game stat headers
 			m_textRect.left = -1084;
@@ -596,46 +635,72 @@ void Framework::Render()
 
 			swprintf_s(m_acTextBuffer, 64, L"%s", L"LEVEL");
 
-			m_pD3DFont[2]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_CENTER, D3DCOLOR_ARGB((int)m_fPauseTxtAlpha, 100, 100, 100));
+			m_pD3DFont[2]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_CENTER, D3DCOLOR_ARGB((int)m_fPauseMenuAlpha, 100, 100, 100));
 
 			m_textRect.top += 97;
 
 			swprintf_s(m_acTextBuffer, 64, L"%s", L"LINES");
 
-			m_pD3DFont[2]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_CENTER, D3DCOLOR_ARGB((int)m_fPauseTxtAlpha, 100, 100, 100));
+			m_pD3DFont[2]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_CENTER, D3DCOLOR_ARGB((int)m_fPauseMenuAlpha, 100, 100, 100));
 
 			m_textRect.top += 95;
 
 			swprintf_s(m_acTextBuffer, 64, L"%s", L"ELAPSED");
 
-			m_pD3DFont[2]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_CENTER, D3DCOLOR_ARGB((int)m_fPauseTxtAlpha, 100, 100, 100));
+			m_pD3DFont[2]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_CENTER, D3DCOLOR_ARGB((int)m_fPauseMenuAlpha, 100, 100, 100));
 
 			// Game stats
 			m_textRect.top -= 175;
 
 			swprintf_s(m_acTextBuffer, 64, L"%i", m_nLevel);
 
-			m_pD3DFont[3]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_CENTER, D3DCOLOR_ARGB((int)m_fPauseTxtAlpha, 140, 140, 140));
+			m_pD3DFont[3]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_CENTER, D3DCOLOR_ARGB((int)m_fPauseMenuAlpha, 140, 140, 140));
 
 			m_textRect.top += 97;
 
 			swprintf_s(m_acTextBuffer, 64, L"%i", m_nLines);
 
-			m_pD3DFont[3]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_CENTER, D3DCOLOR_ARGB((int)m_fPauseTxtAlpha, 140, 140, 140));
+			m_pD3DFont[3]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_CENTER, D3DCOLOR_ARGB((int)m_fPauseMenuAlpha, 140, 140, 140));
 
 			m_textRect.top += 95;
 
 			swprintf_s(m_acTextBuffer, 64, L"%s", m_sTime.c_str());
 
-			m_pD3DFont[3]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_CENTER, D3DCOLOR_ARGB((int)m_fPauseTxtAlpha, 140, 140, 140));
+			m_pD3DFont[3]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_CENTER, D3DCOLOR_ARGB((int)m_fPauseMenuAlpha, 140, 140, 140));
 
 			// Pause menu
-			m_textRect.left = 0;
-			m_textRect.top = 500;
+			if (m_bPause)
+			{
+				m_textRect.left = 0;
+				m_textRect.top = 315;
 
-			swprintf_s(m_acTextBuffer, 64, L"%s", L"PAUSED");
+				for (int i = 0; i < 3; ++i)
+				{
+					switch (i)
+					{
+					case 0:
+						swprintf_s(m_acTextBuffer, 64, L"%s", L"RESUME");
 
-			m_pD3DFont[4]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_CENTER, D3DCOLOR_ARGB(240 - (int)m_fPauseTxtAlpha, 250, 250, 250));
+						break;
+
+					case 1:
+						swprintf_s(m_acTextBuffer, 64, L"%s", L"RESTART");
+
+						break;
+
+					case 2:
+						swprintf_s(m_acTextBuffer, 64, L"%s", L"EXIT GAME");
+					}
+
+					m_textRect.top += 100;
+
+					if (m_nMenuSelect == i)
+						m_pD3DFont[4]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_CENTER, D3DCOLOR_ARGB(240 - (int)m_fPauseMenuAlpha, 255, 255, 255));
+
+					else
+						m_pD3DFont[4]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_CENTER, D3DCOLOR_ARGB(240 - (int)m_fPauseMenuAlpha, 175, 175, 175));
+				}
+			}
 
 			// Debug
 			m_textRect.top = 50;
@@ -720,6 +785,23 @@ bool Framework::KeyPress(int arg)
 	}
 
 	return false;
+}
+
+void Framework::Restart()
+{
+	m_grid.Reset();
+
+	m_vLines.clear();
+
+	m_nLevel = m_nLines = m_nSeconds = 0;
+
+	m_fScore = m_fLineTimer = m_fPauseAlpha = 0.0f;
+
+	m_fBackRotBase = m_fBackRotRate = 0.02f;
+
+	m_sTime = L"0:00";
+
+	m_pfPreviewColor = m_grid.PreviewColor();
 }
 
 Framework::~Framework()

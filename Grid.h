@@ -7,7 +7,7 @@
 
 class Grid
 {
-public:	// DEBUG
+private:
 	struct Cell
 	{
 		enum TYPE

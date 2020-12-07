@@ -23,7 +23,7 @@ class Framework
 
 	D3DCAPS9			m_D3DCaps;				//Direct3D capabilities
 
-	ID3DXFont*			m_pD3DFont[5];			//Fonts
+	ID3DXFont*			m_pD3DFont[6];			//Fonts
 
 	ID3DXSprite*		m_pD3DSprite;			//Sprite
 

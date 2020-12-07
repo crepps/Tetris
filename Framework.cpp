@@ -122,6 +122,9 @@ void Framework::Init(HWND& hWnd, HINSTANCE& hInst, Input* input, bool bWindowed)
 	D3DXCreateFont(m_pD3DDevice, 50, 0, FW_BOLD, 0, false, DEFAULT_CHARSET,
 		OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT("Intel Clear"), &m_pD3DFont[4]);
 
+	D3DXCreateFont(m_pD3DDevice, 55, 0, FW_BOLD, 0, false, DEFAULT_CHARSET,
+		OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT("Intel Clear"), &m_pD3DFont[5]);
+
 	//////////////////////////////////////////////////////////////////////////
 	// Sprite Object and Textures
 	//////////////////////////////////////////////////////////////////////////
@@ -437,16 +440,19 @@ void Framework::Update(float dt)
 
 	if (m_fAnimTimer > 1.0f)	// Time-based updates
 	{
-		// Rotate background
-		if(!*m_pbGameOver && !m_bPause)
-			m_fBackRot = m_fBackRot >= 360.0f ? 0.0f : m_fBackRot + m_fBackRotRate;
+		if (!m_bPause)
+		{
+			// Pulse score
+			if (m_fScoreAlpha == 150.0f)
+				Transition(&m_fScoreAlpha, 151.0f, 220.0f, 5000.0f);
 
-		// Pulse score
-		if (m_fScoreAlpha == 150.0f)
-			Transition(&m_fScoreAlpha, 151.0f, 220.0f, 5000.0f);
+			if (m_fScoreAlpha == 220.0f)
+				Transition(&m_fScoreAlpha, 219.0f, 150.0f, 5000.0f);
 
-		if (m_fScoreAlpha == 220.0f)
-			Transition(&m_fScoreAlpha, 219.0f, 150.0f, 5000.0f);
+			// Rotate background
+			if (!*m_pbGameOver)
+				m_fBackRot = m_fBackRot >= 360.0f ? 0.0f : m_fBackRot + m_fBackRotRate;
+		}
 
 		// Update transitions
 		if (m_vTransitions.size())
@@ -557,7 +563,8 @@ void Framework::Render()
 
 
 				// Single cell
-				m_cellPos = vec2(710.0f, 90.0f);
+				//m_cellPos = vec2(710.0f, 90.0f);
+				m_cellPos = vec2(694.0f, 74.0f);
 
 				for (int j = 0; j < 18; ++j)
 				{
@@ -565,7 +572,8 @@ void Framework::Render()
 					{
 						if (m_grid.Drawn(i, j) || *m_pbGameOver)
 						{
-							Transform(0.78f, 0.78f, 0.0f, m_cellPos.x, m_cellPos.y);
+							//Transform(0.78f, 0.78f, 0.0f, m_cellPos.x, m_cellPos.y);
+							Transform(0.65f, 0.65f, 0.0f, m_cellPos.x, m_cellPos.y);
 
 							if (m_bFlashing && std::find(m_vLines.begin(), m_vLines.end(), j) != m_vLines.end())
 							{
@@ -592,7 +600,7 @@ void Framework::Render()
 						m_cellPos.x += 50.0f;
 					}
 
-					m_cellPos.x = 710.0f;
+					m_cellPos.x = 694.0f;
 					m_cellPos.y += 50.0f;
 				}
 
@@ -695,7 +703,7 @@ void Framework::Render()
 					m_textRect.top += 100;
 
 					if (m_nMenuSelect == i)
-						m_pD3DFont[4]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_CENTER, D3DCOLOR_ARGB(240 - (int)m_fPauseMenuAlpha, 255, 255, 255));
+						m_pD3DFont[5]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_CENTER, D3DCOLOR_ARGB(240 - (int)m_fPauseMenuAlpha, 255, 255, 255));
 
 					else
 						m_pD3DFont[4]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_CENTER, D3DCOLOR_ARGB(240 - (int)m_fPauseMenuAlpha, 175, 175, 175));

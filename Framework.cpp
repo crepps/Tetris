@@ -141,8 +141,7 @@ void Framework::Init(HWND& hWnd, HINSTANCE& hInst, Input* input, bool bWindowed)
 		D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_DEFAULT, D3DX_DEFAULT,
 		D3DCOLOR_XRGB(255, 255, 255), &m_imageInfo, 0, &m_pForegroundTex[0]);
 
-	// Black
-	D3DXCreateTextureFromFileEx(m_pD3DDevice, L"Textures\\Black.png", 0, 0, 0, 0,
+	D3DXCreateTextureFromFileEx(m_pD3DDevice, L"Textures\\Pause.png", 0, 0, 0, 0,
 		D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_DEFAULT, D3DX_DEFAULT,
 		D3DCOLOR_XRGB(255, 255, 255), &m_imageInfo, 0, &m_pForegroundTex[1]);
 
@@ -256,16 +255,16 @@ void Framework::Update(float dt)
 
 		if (!m_bPause)
 		{
-			Transition(&m_fPauseAlpha, 130.0f, 0.0f, 1000.0f);
+			Transition(&m_fPauseAlpha, 240.0f, 0.0f, 1000.0f);
 
-			Transition(&m_fPauseMenuAlpha, 50.0f, 240.0f, 1000.0f);
+			//Transition(&m_fPauseMenuAlpha, 50.0f, 240.0f, 1000.0f);
 
 			*m_pfPreviewColor = 255.0f;
 		}
 
 		else
 		{
-			Transition(&m_fPauseAlpha, 0.0f, 130.0f, 1000.0f);
+			Transition(&m_fPauseAlpha, 0.0f, 240.0f, 1000.0f);
 
 			Transition(&m_fPauseMenuAlpha, 240.0, 50.0f, 1000.0f);
 		}
@@ -286,13 +285,15 @@ void Framework::Update(float dt)
 			case 1:
 				Restart();
 
-				Transition(&m_fPauseAlpha, 130.0f, 0.0f, 1000.0f);
+				Transition(&m_fPauseAlpha, 240.0f, 0.0f, 1000.0f);
 
 				Transition(&m_fPauseMenuAlpha, 50.0f, 240.0f, 1000.0f);
 
 				*m_pfPreviewColor = 255.0f;
 
 			case 0:
+				Transition(&m_fPauseMenuAlpha, 50.0f, 240.0f, 1000.0f);
+
 				m_nMenuSelect = 0;
 
 				m_bPause = false;
@@ -442,17 +443,17 @@ void Framework::Update(float dt)
 	{
 		if (!m_bPause)
 		{
-			// Pulse score
-			if (m_fScoreAlpha == 150.0f)
-				Transition(&m_fScoreAlpha, 151.0f, 220.0f, 5000.0f);
-
-			if (m_fScoreAlpha == 220.0f)
-				Transition(&m_fScoreAlpha, 219.0f, 150.0f, 5000.0f);
-
 			// Rotate background
 			if (!*m_pbGameOver)
 				m_fBackRot = m_fBackRot >= 360.0f ? 0.0f : m_fBackRot + m_fBackRotRate;
 		}
+
+		// Pulse score
+		if (m_fScoreAlpha == 150.0f)
+			Transition(&m_fScoreAlpha, 151.0f, 220.0f, 2500.0f);
+
+		if (m_fScoreAlpha == 220.0f)
+			Transition(&m_fScoreAlpha, 219.0f, 150.0f, 2500.0f);
 
 		// Update transitions
 		if (m_vTransitions.size())
@@ -635,7 +636,7 @@ void Framework::Render()
 
 			swprintf_s(m_acTextBuffer, 64, L"%0*i", 10, (int)m_fScore);
 
-			m_pD3DFont[1]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_LEFT, D3DCOLOR_ARGB(!m_bPause ? (int)m_fScoreAlpha : (int)m_fPauseMenuAlpha, 200, 200, 200));
+			m_pD3DFont[1]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_LEFT, D3DCOLOR_ARGB((int)m_fScoreAlpha, 200, 200, 200));
 
 			// Game stat headers
 			m_textRect.left = -1084;
@@ -643,38 +644,38 @@ void Framework::Render()
 
 			swprintf_s(m_acTextBuffer, 64, L"%s", L"LEVEL");
 
-			m_pD3DFont[2]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_CENTER, D3DCOLOR_ARGB((int)m_fPauseMenuAlpha, 100, 100, 100));
+			m_pD3DFont[2]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_CENTER, D3DCOLOR_ARGB(240, 100, 100, 100));
 
 			m_textRect.top += 97;
 
 			swprintf_s(m_acTextBuffer, 64, L"%s", L"LINES");
 
-			m_pD3DFont[2]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_CENTER, D3DCOLOR_ARGB((int)m_fPauseMenuAlpha, 100, 100, 100));
+			m_pD3DFont[2]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_CENTER, D3DCOLOR_ARGB(240, 100, 100, 100));
 
 			m_textRect.top += 95;
 
 			swprintf_s(m_acTextBuffer, 64, L"%s", L"ELAPSED");
 
-			m_pD3DFont[2]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_CENTER, D3DCOLOR_ARGB((int)m_fPauseMenuAlpha, 100, 100, 100));
+			m_pD3DFont[2]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_CENTER, D3DCOLOR_ARGB(240, 100, 100, 100));
 
 			// Game stats
 			m_textRect.top -= 175;
 
 			swprintf_s(m_acTextBuffer, 64, L"%i", m_nLevel);
 
-			m_pD3DFont[3]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_CENTER, D3DCOLOR_ARGB((int)m_fPauseMenuAlpha, 140, 140, 140));
+			m_pD3DFont[3]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_CENTER, D3DCOLOR_ARGB(240, 140, 140, 140));
 
 			m_textRect.top += 97;
 
 			swprintf_s(m_acTextBuffer, 64, L"%i", m_nLines);
 
-			m_pD3DFont[3]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_CENTER, D3DCOLOR_ARGB((int)m_fPauseMenuAlpha, 140, 140, 140));
+			m_pD3DFont[3]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_CENTER, D3DCOLOR_ARGB(240, 140, 140, 140));
 
 			m_textRect.top += 95;
 
 			swprintf_s(m_acTextBuffer, 64, L"%s", m_sTime.c_str());
 
-			m_pD3DFont[3]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_CENTER, D3DCOLOR_ARGB((int)m_fPauseMenuAlpha, 140, 140, 140));
+			m_pD3DFont[3]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_CENTER, D3DCOLOR_ARGB(240, 140, 140, 140));
 
 			// Pause menu
 			if (m_bPause)
@@ -711,7 +712,7 @@ void Framework::Render()
 			}
 
 			// Debug
-			m_textRect.top = 50;
+			/*m_textRect.top = 50;
 			m_textRect.left = 50;
 
 			swprintf_s(m_acTextBuffer, 64, L"Transition vector size: %i", m_vTransitions.size());
@@ -720,15 +721,10 @@ void Framework::Render()
 
 			m_textRect.top += 25;
 
-			swprintf_s(m_acTextBuffer, 64, L"Score Alpha: %i", (int)m_fScoreAlpha);
-
-			m_pD3DFont[0]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_LEFT, D3DCOLOR_ARGB(240, 200, 200, 200));
-
-			m_textRect.top += 25;
-
 			swprintf_s(m_acTextBuffer, 64, L"Background Rotation Rate: %.4f", m_fBackRotRate);
 
-			m_pD3DFont[0]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_LEFT, D3DCOLOR_ARGB(240, 200, 200, 200));
+			m_pD3DFont[0]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_LEFT, D3DCOLOR_ARGB(240, 200, 200, 200));*/
+
 
 			m_pD3DDevice->EndScene();
 		}

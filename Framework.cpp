@@ -192,7 +192,7 @@ void Framework::Init(HWND& hWnd, HINSTANCE& hInst, Input* input, bool bWindowed)
 	// Initialize FMOD
 	//////////////////////////////////////////////////////////////////////////
 
-	/*result = FMOD::System_Create(&system);		// Create the main system object.
+	result = FMOD::System_Create(&system);		// Create main system object
 
 	if (result != FMOD_OK)
 	{
@@ -200,7 +200,7 @@ void Framework::Init(HWND& hWnd, HINSTANCE& hInst, Input* input, bool bWindowed)
 		exit(-1);
 	}
 
-	result = system->init(100, FMOD_INIT_NORMAL, 0);	// Initialize FMOD.
+	result = system->init(2, FMOD_INIT_NORMAL, 0);	// Initialize FMOD
 
 	if (result != FMOD_OK)
 	{
@@ -208,15 +208,29 @@ void Framework::Init(HWND& hWnd, HINSTANCE& hInst, Input* input, bool bWindowed)
 		exit(-1);
 	}
 
-	system->createSound("Rotate.wav", FMOD_DEFAULT, 0, &sound[0]);
+	// Music
+	system->createStream("Music\\Theme_B.wav", FMOD_LOOP_NORMAL | FMOD_2D, 0, &stream[0]);
 
-	channel[0]->setVolume(0.6f);
+	// Sound effects
+	system->createSound("Sounds\\Move.wav", FMOD_DEFAULT, 0, &sound[MOVE]);
 
-	system->createStream("example music.wav", FMOD_LOOP_NORMAL | FMOD_2D | FMOD_HARDWARE, 0, &stream);
+	system->createSound("Sounds\\Rotate.wav", FMOD_DEFAULT, 0, &sound[ROTATE]);
 
-	channel[1]->setVolume(0.2f);
+	system->createSound("Sounds\\Drop_1.wav", FMOD_DEFAULT, 0, &sound[DROP_1]);
 
-	system->playSound(FMOD_CHANNEL_FREE, stream, false, &channel[1]);*/
+	system->createSound("Sounds\\Drop_2.wav", FMOD_DEFAULT, 0, &sound[DROP_2]);
+
+	system->createSound("Sounds\\Line.wav", FMOD_DEFAULT, 0, &sound[LINE]);
+
+	system->createSound("Sounds\\Game_over.wav", FMOD_DEFAULT, 0, &sound[GAME_OVER]);
+
+
+	system->playSound(stream[0], NULL, false, &channel[0]);
+
+	channel[0]->setVolume(0.5f);
+
+	channel[1]->setVolume(0.7f);
+
 
 	m_nRawTime = time(0);
 
@@ -255,11 +269,13 @@ void Framework::Update(float dt)
 
 		if (!m_bPause)
 		{
+			m_nMenuSelect = 0;
+			
 			Transition(&m_fPauseAlpha, 240.0f, 0.0f, 1000.0f);
 
-			//Transition(&m_fPauseMenuAlpha, 50.0f, 240.0f, 1000.0f);
-
 			*m_pfPreviewColor = 255.0f;
+
+			channel[0]->setVolume(0.5f);
 		}
 
 		else
@@ -267,6 +283,8 @@ void Framework::Update(float dt)
 			Transition(&m_fPauseAlpha, 0.0f, 240.0f, 1000.0f);
 
 			Transition(&m_fPauseMenuAlpha, 240.0, 50.0f, 1000.0f);
+
+			channel[0]->setVolume(0.25f);
 		}
 	}
 
@@ -327,11 +345,11 @@ void Framework::Update(float dt)
 		// Update lines
 		if (m_vLines.size())
 		{
+			if (m_fLineTimer == 0.0f)
+				system->playSound(sound[LINE], NULL, false, &channel[1]);
+
 			// Increment line timer with delta time
 			m_fLineTimer += dt * 0.0075f;
-
-			// Update background rotation speed based on level
-			m_fBackRotRate = (m_nLevel ? (float)m_nLevel * m_fBackRotBase : m_fBackRotRate);
 
 			if ((int)m_fLineTimer % (int)m_fFlashTime == 0)
 			{
@@ -346,6 +364,9 @@ void Framework::Update(float dt)
 					{
 						for (int i = 0; i < m_vLines.size(); ++i)
 							m_grid.EmptyLine(m_vLines[i]);
+
+						// Update background rotation speed based on level
+						m_fBackRotRate = (m_nLevel ? (float)m_nLevel * m_fBackRotBase : m_fBackRotRate);
 					}
 				}
 			}
@@ -377,7 +398,7 @@ void Framework::Update(float dt)
 					m_fScoreIncrement = 1200 * (m_nLevel + 1);
 				}
 
-				Transition(&m_fScore, m_fScore, m_fScore + m_fScoreIncrement, 8000.0f);
+				Transition(&m_fScore, m_fScore, m_fScore + m_fScoreIncrement, 5000.0f);
 
 				// Update level
 				if (m_nLevel < m_nLines / 10)
@@ -392,6 +413,8 @@ void Framework::Update(float dt)
 				m_grid.DropLines();
 
 				m_vLines.clear();
+
+				system->playSound(sound[DROP_2], NULL, false, &channel[1]);
 			}
 		}
 
@@ -399,13 +422,25 @@ void Framework::Update(float dt)
 		else
 		{
 			if (KeyPress(VK_LEFT))
+			{
 				m_grid.MovePiece(-1, 0);
 
+				system->playSound(sound[MOVE], NULL, false, &channel[1]);
+			}
+
 			else if (KeyPress(VK_RIGHT))
+			{
 				m_grid.MovePiece(1, 0);
 
+				system->playSound(sound[MOVE], NULL, false, &channel[1]);
+			}
+
 			if (KeyPress(VK_UP))
+			{
 				m_grid.RotatePiece();
+
+				system->playSound(sound[ROTATE], NULL, false, &channel[1]);
+			}
 
 			if (KeyPress(VK_DOWN))
 				m_grid.Accelerate(true);
@@ -516,6 +551,10 @@ void Framework::Update(float dt)
 				m_fEndTimer = 0;
 			}
 		}
+
+		
+		//system->playSound(stream[0], NULL, true, &channel[0]);
+		//system->playSound(sound[GAME_OVER], NULL, false, &channel[1]);
 	}
 }
 

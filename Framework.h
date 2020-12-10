@@ -42,15 +42,24 @@ class Framework
 						m_worldMat;
 
 	// FMOD
-	/*FMOD_RESULT result;
+	FMOD_RESULT result;
 
 	FMOD::System *system;
 
-	FMOD::Sound* sound[1];
+	FMOD::Sound *sound[6],
+			*stream[3];
 
 	FMOD::Channel* channel[2];
 
-	FMOD::Sound* stream;*/
+	enum SOUND
+	{
+		MOVE,
+		ROTATE,
+		DROP_1,
+		DROP_2,
+		LINE,
+		GAME_OVER
+	};
 
 	// Animation
 	struct Trans

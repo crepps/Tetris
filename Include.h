@@ -16,5 +16,5 @@
 #pragma comment(lib, "d3dx9.lib")
 #pragma comment(lib, "winmm.lib")
 
-//#include "fmod.hpp"
-//#pragma comment(lib, "fmodex_vc.lib")
+#include "fmod.hpp"
+#pragma comment(lib, "fmod_vc.lib")

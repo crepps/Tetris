@@ -99,9 +99,10 @@ class Framework
 		m_nSeconds,
 		m_nMenuSelect;
 
-	bool *m_pbGameOver,
+	bool* m_pbGameOver,
 		m_bFlashing,
 		m_bPause,
+		m_bEndSound,
 		m_abEndLines[18],
 		m_abGridFill[3];
 

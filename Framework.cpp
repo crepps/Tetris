@@ -15,7 +15,7 @@ Framework::Framework()
 
 	m_nLevel = m_nLines = m_nSeconds = m_nMenuSelect = 0;
 
-	m_bFlashing = m_bPause = m_abGridFill[0] = m_abGridFill[1] = m_abGridFill[2] = false;
+	m_bFlashing = m_bPause = m_abGridFill[0] = m_bEndSound = m_abGridFill[1] = m_abGridFill[2] = false;
 
 	m_fAnimTimer = m_fLineTimer = m_fBackRot = m_fPauseAlpha = m_fEndTimer = 0.0f;
 
@@ -209,7 +209,11 @@ void Framework::Init(HWND& hWnd, HINSTANCE& hInst, Input* input, bool bWindowed)
 	}
 
 	// Music
-	system->createStream("Music\\Theme_B.wav", FMOD_LOOP_NORMAL | FMOD_2D, 0, &stream[0]);
+	system->createStream("Music\\Theme_A.wav", FMOD_LOOP_NORMAL | FMOD_2D, 0, &stream[0]);
+
+	system->createStream("Music\\Theme_B.wav", FMOD_LOOP_NORMAL | FMOD_2D, 0, &stream[1]);
+
+	system->createStream("Music\\Theme_C.wav", FMOD_LOOP_NORMAL | FMOD_2D, 0, &stream[2]);
 
 	// Sound effects
 	system->createSound("Sounds\\Move.wav", FMOD_DEFAULT, 0, &sound[MOVE]);
@@ -224,8 +228,9 @@ void Framework::Init(HWND& hWnd, HINSTANCE& hInst, Input* input, bool bWindowed)
 
 	system->createSound("Sounds\\Game_over.wav", FMOD_DEFAULT, 0, &sound[GAME_OVER]);
 
+	srand(time(0));
 
-	system->playSound(stream[0], NULL, false, &channel[0]);
+	system->playSound(stream[rand()%3], NULL, false, &channel[0]);
 
 	channel[0]->setVolume(0.5f);
 
@@ -552,9 +557,14 @@ void Framework::Update(float dt)
 			}
 		}
 
-		
-		//system->playSound(stream[0], NULL, true, &channel[0]);
-		//system->playSound(sound[GAME_OVER], NULL, false, &channel[1]);
+		if (!m_bEndSound)
+		{
+			system->playSound(stream[0], NULL, true, &channel[0]);
+
+			system->playSound(sound[GAME_OVER], NULL, false, &channel[1]);
+
+			m_bEndSound = true;
+		}
 	}
 }
 
@@ -596,14 +606,10 @@ void Framework::Render()
 				Transform(0.3f, 0.6f, 0.0f, 1367.0f, 700.0f);
 
 				m_pD3DSprite->Draw(m_pTextures[2], 0, &D3DXVECTOR3(0.0f, 0.0f, 0.0f),
-					0, D3DCOLOR_ARGB(220, 250, 250, 250));
-
-
-				// <--
-
+					0, D3DCOLOR_ARGB(175, 250, 250, 250));
+					
 
 				// Single cell
-				//m_cellPos = vec2(710.0f, 90.0f);
 				m_cellPos = vec2(694.0f, 74.0f);
 
 				for (int j = 0; j < 18; ++j)
@@ -612,7 +618,6 @@ void Framework::Render()
 					{
 						if (m_grid.Drawn(i, j) || *m_pbGameOver)
 						{
-							//Transform(0.78f, 0.78f, 0.0f, m_cellPos.x, m_cellPos.y);
 							Transform(0.65f, 0.65f, 0.0f, m_cellPos.x, m_cellPos.y);
 
 							if (m_bFlashing && std::find(m_vLines.begin(), m_vLines.end(), j) != m_vLines.end())

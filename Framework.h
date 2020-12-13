@@ -97,12 +97,16 @@ class Framework
 		m_fScoreIncrement,
 		m_nRawTime,
 		m_nSeconds,
-		m_nMenuSelect;
+		m_nMenuSelect,
+		m_nMusic;
 
 	bool* m_pbGameOver,
 		m_bFlashing,
 		m_bPause,
+		m_bLineSound,
 		m_bEndSound,
+		m_bAudio,
+		m_bSounds,
 		m_abEndLines[18],
 		m_abGridFill[3];
 

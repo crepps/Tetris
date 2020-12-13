@@ -17,6 +17,8 @@ Framework::Framework()
 
 	m_bFlashing = m_bPause = m_abGridFill[0] = m_bEndSound = m_abGridFill[1] = m_abGridFill[2] = false;
 
+	m_bAudio = m_bSounds = true;
+
 	m_fAnimTimer = m_fLineTimer = m_fBackRot = m_fPauseAlpha = m_fEndTimer = 0.0f;
 
 	m_fBackRotBase = m_fBackRotRate = 0.02f;
@@ -33,6 +35,12 @@ Framework::Framework()
 
 	for (int i = 0; i < 18; ++i)
 		m_abEndLines[i] = false;
+
+	m_nRawTime = time(0);
+
+	srand(m_nRawTime);
+
+	m_nMusic = rand() % 3 + 1;
 }
 
 void Framework::Init(HWND& hWnd, HINSTANCE& hInst, Input* input, bool bWindowed)
@@ -200,7 +208,7 @@ void Framework::Init(HWND& hWnd, HINSTANCE& hInst, Input* input, bool bWindowed)
 		exit(-1);
 	}
 
-	result = system->init(2, FMOD_INIT_NORMAL, 0);	// Initialize FMOD
+	result = system->init(32, FMOD_INIT_NORMAL, 0);	// Initialize FMOD
 
 	if (result != FMOD_OK)
 	{
@@ -228,16 +236,15 @@ void Framework::Init(HWND& hWnd, HINSTANCE& hInst, Input* input, bool bWindowed)
 
 	system->createSound("Sounds\\Game_over.wav", FMOD_DEFAULT, 0, &sound[GAME_OVER]);
 
-	srand(time(0));
 
-	system->playSound(stream[rand()%3], NULL, false, &channel[0]);
+	system->playSound(stream[m_nMusic-1], NULL, false, &channel[0]);
 
+	channel[0]->setPriority(0);
 	channel[0]->setVolume(0.5f);
 
+	channel[1]->setPriority(1);
 	channel[1]->setVolume(0.7f);
 
-
-	m_nRawTime = time(0);
 
 	// Get pointer to 'game over' bool
 	m_pbGameOver = m_grid.GetGameOver();
@@ -262,6 +269,9 @@ void Framework::Update(float dt)
 
 	// Update input object
 	m_pInput->Update();
+
+	// Update FMOD
+	system->update();
 
 	// Pause menu
 	if (KeyPress(VK_ESCAPE) && !*m_pbGameOver)
@@ -332,14 +342,6 @@ void Framework::Update(float dt)
 	// Game updates
 	if (!*m_pbGameOver && !m_bPause)
 	{
-		// DEBUG
-		if (KeyPress(VK_RETURN))
-		{
-			++m_nLevel;
-
-			m_fBackRotRate = (((float)m_nLevel + 1.0f) * m_fBackRotBase);
-		}
-
 		// Update time elapsed
 		UpdateTime();
 
@@ -350,8 +352,12 @@ void Framework::Update(float dt)
 		// Update lines
 		if (m_vLines.size())
 		{
-			if (m_fLineTimer == 0.0f)
+			if (!m_bLineSound)
+			{
 				system->playSound(sound[LINE], NULL, false, &channel[1]);
+
+				m_bLineSound = true;
+			}
 
 			// Increment line timer with delta time
 			m_fLineTimer += dt * 0.0075f;
@@ -420,6 +426,8 @@ void Framework::Update(float dt)
 				m_vLines.clear();
 
 				system->playSound(sound[DROP_2], NULL, false, &channel[1]);
+
+				m_bLineSound = false;
 			}
 		}
 
@@ -559,12 +567,51 @@ void Framework::Update(float dt)
 
 		if (!m_bEndSound)
 		{
-			system->playSound(stream[0], NULL, true, &channel[0]);
+			channel[0]->stop();
 
 			system->playSound(sound[GAME_OVER], NULL, false, &channel[1]);
 
 			m_bEndSound = true;
 		}
+	}
+
+	// Audio control
+	if (KeyPress('A'))	// All audio
+	{
+		m_bAudio = !m_bAudio ? true : false;
+	}
+
+	if (KeyPress('S'))	// Sound effects
+	{
+		m_bSounds = !m_bSounds ? true : false;
+	}
+
+	if (KeyPress('M'))	// Music
+	{
+		m_nMusic = m_nMusic < 3 ? m_nMusic + 1 : 0;
+
+		channel[0]->setPaused(true);
+
+		switch (m_nMusic)
+		{
+		case 0:
+			break;
+
+		case 1:
+			system->playSound(stream[0], NULL, false, &channel[0]);
+
+			break;
+
+		case 2:
+			system->playSound(stream[1], NULL, false, &channel[0]);
+
+			break;
+
+		case 3:
+			system->playSound(stream[2], NULL, false, &channel[0]);
+		}
+
+		channel[0]->setVolume(0.5f);
 	}
 }
 
@@ -765,7 +812,7 @@ void Framework::Render()
 
 			m_textRect.top += 25;
 
-			swprintf_s(m_acTextBuffer, 64, L"Background Rotation Rate: %.4f", m_fBackRotRate);
+			swprintf_s(m_acTextBuffer, 64, L"Audio channels %i", numChannels);
 
 			m_pD3DFont[0]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_LEFT, D3DCOLOR_ARGB(240, 200, 200, 200));*/
 
@@ -859,6 +906,8 @@ Framework::~Framework()
 
 void Framework::Shutdown()
 {
+	system->release();
+
 	SAFE_RELEASE(m_pD3DSprite);
 
 	for (int i = 0; i < 1; ++i)

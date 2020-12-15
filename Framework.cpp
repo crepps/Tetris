@@ -236,6 +236,8 @@ void Framework::Init(HWND& hWnd, HINSTANCE& hInst, Input* input, bool bWindowed)
 
 	system->createSound("Sounds\\Game_over.wav", FMOD_DEFAULT, 0, &sound[GAME_OVER]);
 
+	system->createSound("Sounds\\Select.wav", FMOD_DEFAULT, 0, &sound[SELECT]);
+
 
 	system->playSound(stream[m_nMusic-1], NULL, false, &channel[0]);
 
@@ -306,10 +308,18 @@ void Framework::Update(float dt)
 	if (m_bPause)
 	{
 		if (KeyPress(VK_DOWN) && m_nMenuSelect < 2)
+		{
 			++m_nMenuSelect;
 
+			system->playSound(sound[SELECT], NULL, false, &channel[1]);
+		}
+
 		if (KeyPress(VK_UP) && m_nMenuSelect > 0)
+		{
 			--m_nMenuSelect;
+
+			system->playSound(sound[SELECT], NULL, false, &channel[1]);
+		}
 
 		if (KeyPress(VK_RETURN) || KeyPress(VK_SPACE))
 		{
@@ -330,6 +340,8 @@ void Framework::Update(float dt)
 				m_nMenuSelect = 0;
 
 				m_bPause = false;
+
+				channel[0]->setVolume(0.5f);
 
 				break;
 

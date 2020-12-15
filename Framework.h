@@ -46,7 +46,7 @@ class Framework
 
 	FMOD::System *system;
 
-	FMOD::Sound *sound[6],
+	FMOD::Sound *sound[7],
 			*stream[3];
 
 	FMOD::Channel* channel[2];
@@ -58,7 +58,8 @@ class Framework
 		DROP_1,
 		DROP_2,
 		LINE,
-		GAME_OVER
+		GAME_OVER,
+		SELECT
 	};
 
 	// Animation

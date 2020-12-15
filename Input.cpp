@@ -13,4 +13,6 @@ void Input::Update()
 		if (keyDown[i] && !keyboard[i])
 			keyDown[i] = false;
 	}
+
+	Sleep(1);
 }

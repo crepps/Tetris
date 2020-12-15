@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Include.h"
+
 struct Input
 {
 	bool keyboard[256],

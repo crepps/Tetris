@@ -19,7 +19,7 @@ Framework::Framework()
 
 	m_bAudio = m_bSounds = true;
 
-	m_fAnimTimer = m_fLineTimer = m_fBackRot = m_fPauseAlpha = m_fEndTimer = 0.0f;
+	m_fScore = m_fAnimTimer = m_fLineTimer = m_fBackRot = m_fPauseAlpha = m_fEventAlpha = m_fEndTimer = 0.0f;
 
 	m_fBackRotBase = m_fBackRotRate = 0.02f;
 
@@ -29,9 +29,11 @@ Framework::Framework()
 
 	m_fFlashTime = 1.0f;
 
-	m_fScore = 0.0f;
+	m_fEventTimer = -1.0f;
 
 	m_sTime = L"0:00";
+
+	m_sEventText = "";
 
 	for (int i = 0; i < 18; ++i)
 		m_abEndLines[i] = false;
@@ -40,7 +42,7 @@ Framework::Framework()
 
 	srand(m_nRawTime);
 
-	m_nMusic = rand() % 3 + 1;
+	m_nMusic = 0; // rand() % 3 + 1;
 }
 
 void Framework::Init(HWND& hWnd, HINSTANCE& hInst, Input* input, bool bWindowed)
@@ -133,6 +135,9 @@ void Framework::Init(HWND& hWnd, HINSTANCE& hInst, Input* input, bool bWindowed)
 	D3DXCreateFont(m_pD3DDevice, 55, 0, FW_BOLD, 0, false, DEFAULT_CHARSET,
 		OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT("Intel Clear"), &m_pD3DFont[5]);
 
+	D3DXCreateFont(m_pD3DDevice, 25, 0, FW_BOLD, 0, false, DEFAULT_CHARSET,
+		OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT("Consolas"), &m_pD3DFont[6]);
+
 	//////////////////////////////////////////////////////////////////////////
 	// Sprite Object and Textures
 	//////////////////////////////////////////////////////////////////////////
@@ -194,6 +199,10 @@ void Framework::Init(HWND& hWnd, HINSTANCE& hInst, Input* input, bool bWindowed)
 	D3DXCreateTextureFromFileEx(m_pD3DDevice, L"Textures\\Tetorisu.png", 0, 0, 0, 0,
 		D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_DEFAULT, D3DX_DEFAULT,
 		D3DCOLOR_XRGB(255, 255, 255), &m_imageInfo, 0, &m_pTextures[2]);
+
+	D3DXCreateTextureFromFileEx(m_pD3DDevice, L"Textures\\Message.png", 0, 0, 0, 0,
+		D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_DEFAULT, D3DX_DEFAULT,
+		D3DCOLOR_XRGB(255, 255, 255), &m_imageInfo, 0, &m_pTextures[3]);
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -283,6 +292,8 @@ void Framework::Update(float dt)
 		m_vTransitions.clear();
 
 		m_fScoreAlpha = 150.0f;
+
+		m_fEventAlpha = 0.0f;
 
 		if (!m_bPause)
 		{
@@ -443,9 +454,10 @@ void Framework::Update(float dt)
 			}
 		}
 
-		// If no lines, handle input
+		// If no lines
 		else
 		{
+			// Handle input
 			if (KeyPress(VK_LEFT))
 			{
 				m_grid.MovePiece(-1, 0);
@@ -539,6 +551,19 @@ void Framework::Update(float dt)
 		m_fAnimTimer = 0.0f;
 	}
 
+	// Update event message timer
+	if (m_fEventTimer >= 0.0f)
+	{
+		m_fEventTimer += dt;
+
+		if (m_fEventTimer > 1500.0f)
+		{
+			Transition(&m_fEventAlpha, 240.0f, 0.0f, 5000.0f);
+
+			m_fEventTimer = -1.0f;
+		}
+	}
+
 	// Game over animation
 	if (*m_pbGameOver)
 	{
@@ -590,12 +615,36 @@ void Framework::Update(float dt)
 	// Audio control
 	if (KeyPress('A'))	// All audio
 	{
-		m_bAudio = !m_bAudio ? true : false;
+		if (m_bAudio)
+		{
+			m_bAudio = false;
+
+			EventMsg("AUDIO: DISABLED");
+		}
+
+		else
+		{
+			m_bAudio = true;
+
+			EventMsg("AUDIO: ENABLED");
+		}
 	}
 
-	if (KeyPress('S'))	// Sound effects
+	if (KeyPress('E'))	// Sound effects
 	{
-		m_bSounds = !m_bSounds ? true : false;
+		if (m_bSounds)
+		{
+			m_bSounds = false;
+
+			EventMsg("EFFECTS: DISABLED");
+		}
+
+		else
+		{
+			m_bSounds = true;
+
+			EventMsg("EFFECTS: ENABLED");
+		}
 	}
 
 	if (KeyPress('M'))	// Music
@@ -607,20 +656,28 @@ void Framework::Update(float dt)
 		switch (m_nMusic)
 		{
 		case 0:
+			EventMsg("MUSIC: DISABLED");
+
 			break;
 
 		case 1:
 			system->playSound(stream[0], NULL, false, &channel[0]);
+
+			EventMsg("MUSIC: THEME A");
 
 			break;
 
 		case 2:
 			system->playSound(stream[1], NULL, false, &channel[0]);
 
+			EventMsg("MUSIC: THEME B");
+
 			break;
 
 		case 3:
 			system->playSound(stream[2], NULL, false, &channel[0]);
+
+			EventMsg("MUSIC: THEME C");
 		}
 
 		channel[0]->setVolume(0.5f);
@@ -647,7 +704,7 @@ void Framework::Render()
 				Transform(1.1f, 1.1f, m_fBackRot, 955, 550);
 
 				m_pD3DSprite->Draw(m_pBackgroundTex[0], 0, &D3DXVECTOR3(1024.0f, 1024.0f, 0.0f),
-					0, D3DCOLOR_ARGB(250, 255, 255, 255));
+					0, D3DCOLOR_ARGB(255, 255, 255, 255));
 				
 				// Layer 1
 				Transform(0.938f, 0.528f, 0.0f, 0.0f, 0.0f);
@@ -666,6 +723,12 @@ void Framework::Render()
 
 				m_pD3DSprite->Draw(m_pTextures[2], 0, &D3DXVECTOR3(0.0f, 0.0f, 0.0f),
 					0, D3DCOLOR_ARGB(175, 250, 250, 250));
+
+				// Event message
+				Transform(0.53f, 0.9f, 0.0f, 282.0f, 880.0f);
+
+				m_pD3DSprite->Draw(m_pTextures[3], 0, &D3DXVECTOR3(0.0f, 0.0f, 0.0f),
+					0, D3DCOLOR_ARGB((int)m_fEventAlpha, 150, 150, 150));
 					
 
 				// Single cell
@@ -747,38 +810,45 @@ void Framework::Render()
 
 			swprintf_s(m_acTextBuffer, 64, L"%s", L"LEVEL");
 
-			m_pD3DFont[2]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_CENTER, D3DCOLOR_ARGB(240, 100, 100, 100));
+			m_pD3DFont[2]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_CENTER, D3DCOLOR_ARGB(240, 120, 120, 120));
 
 			m_textRect.top += 97;
 
 			swprintf_s(m_acTextBuffer, 64, L"%s", L"LINES");
 
-			m_pD3DFont[2]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_CENTER, D3DCOLOR_ARGB(240, 100, 100, 100));
+			m_pD3DFont[2]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_CENTER, D3DCOLOR_ARGB(240, 120, 120, 120));
 
 			m_textRect.top += 95;
 
 			swprintf_s(m_acTextBuffer, 64, L"%s", L"ELAPSED");
 
-			m_pD3DFont[2]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_CENTER, D3DCOLOR_ARGB(240, 100, 100, 100));
+			m_pD3DFont[2]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_CENTER, D3DCOLOR_ARGB(240, 120, 120, 120));
 
 			// Game stats
 			m_textRect.top -= 175;
 
 			swprintf_s(m_acTextBuffer, 64, L"%i", m_nLevel);
 
-			m_pD3DFont[3]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_CENTER, D3DCOLOR_ARGB(240, 140, 140, 140));
+			m_pD3DFont[3]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_CENTER, D3DCOLOR_ARGB(240, 170, 170, 170));
 
 			m_textRect.top += 97;
 
 			swprintf_s(m_acTextBuffer, 64, L"%i", m_nLines);
 
-			m_pD3DFont[3]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_CENTER, D3DCOLOR_ARGB(240, 140, 140, 140));
+			m_pD3DFont[3]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_CENTER, D3DCOLOR_ARGB(240, 170, 170, 170));
 
 			m_textRect.top += 95;
 
 			swprintf_s(m_acTextBuffer, 64, L"%s", m_sTime.c_str());
 
-			m_pD3DFont[3]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_CENTER, D3DCOLOR_ARGB(240, 140, 140, 140));
+			m_pD3DFont[3]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_CENTER, D3DCOLOR_ARGB(240, 170, 170, 170));
+
+			// Event message
+			m_textRect.top += 271;
+
+			swprintf_s(m_acTextBuffer, 64, L"%S", m_sEventText.c_str());
+
+			m_pD3DFont[6]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_CENTER, D3DCOLOR_ARGB((int)m_fEventAlpha, 170, 170, 170));
 
 			// Pause menu
 			if (m_bPause)
@@ -815,7 +885,7 @@ void Framework::Render()
 			}
 
 			// Debug
-			/*m_textRect.top = 50;
+			m_textRect.top = 50;
 			m_textRect.left = 50;
 
 			swprintf_s(m_acTextBuffer, 64, L"Transition vector size: %i", m_vTransitions.size());
@@ -824,9 +894,9 @@ void Framework::Render()
 
 			m_textRect.top += 25;
 
-			swprintf_s(m_acTextBuffer, 64, L"Audio channels %i", numChannels);
+			swprintf_s(m_acTextBuffer, 64, L"Event timer: %i", (int)m_fEventTimer);
 
-			m_pD3DFont[0]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_LEFT, D3DCOLOR_ARGB(240, 200, 200, 200));*/
+			m_pD3DFont[0]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_LEFT, D3DCOLOR_ARGB(240, 200, 200, 200));
 
 
 			m_pD3DDevice->EndScene();
@@ -909,6 +979,15 @@ void Framework::Restart()
 	m_sTime = L"0:00";
 
 	m_pfPreviewColor = m_grid.PreviewColor();
+}
+
+void Framework::EventMsg(std::string arg)
+{
+	m_sEventText = arg;
+
+	Transition(&m_fEventAlpha, 0.0f, 250.0f, 850.0f);
+
+	m_fEventTimer = 0.0f;
 }
 
 Framework::~Framework()

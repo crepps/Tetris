@@ -23,11 +23,11 @@ class Framework
 
 	D3DCAPS9			m_D3DCaps;				//Direct3D capabilities
 
-	ID3DXFont*			m_pD3DFont[6];			//Fonts
+	ID3DXFont*			m_pD3DFont[7];			//Fonts
 
 	ID3DXSprite*		m_pD3DSprite;			//Sprite
 
-	IDirect3DTexture9	*m_pTextures[3],		//Textures
+	IDirect3DTexture9	*m_pTextures[4],		//Textures
 						*m_pBackgroundTex[1],
 						*m_pForegroundTex[2],
 						*m_pPieceTex[7];
@@ -119,12 +119,16 @@ class Framework
 		m_fScoreAlpha,
 		m_fPauseAlpha,
 		m_fPauseMenuAlpha,
+		m_fEventAlpha,
 		m_fLineTimer,
 		m_fFlashTime,
 		m_fEndTimer,
+		m_fEventTimer,
 		*m_pfPreviewColor;
 
 	std::wstring m_sTime;
+
+	std::string m_sEventText;
 
 public:
 	Framework();
@@ -144,6 +148,8 @@ public:
 	bool KeyPress(int);
 
 	void Restart();
+
+	void EventMsg(std::string);
 
 	~Framework();
 

@@ -209,52 +209,52 @@ void Framework::Init(HWND& hWnd, HINSTANCE& hInst, Input* input, bool bWindowed)
 	// Initialize FMOD
 	//////////////////////////////////////////////////////////////////////////
 
-	result = FMOD::System_Create(&system);		// Create main system object
+	m_FMODResult = FMOD::System_Create(&m_pFMOD);		// Create main m_pFMOD object
 
-	if (result != FMOD_OK)
+	if (m_FMODResult != FMOD_OK)
 	{
-		//printf("FMOD error! (%d) %s\n", result, FMOD_ErrorString(result));
+		//printf("FMOD error! (%d) %s\n", m_FMODResult, FMOD_ErrorString(m_FMODResult));
 		exit(-1);
 	}
 
-	result = system->init(32, FMOD_INIT_NORMAL, 0);	// Initialize FMOD
+	m_FMODResult = m_pFMOD->init(32, FMOD_INIT_NORMAL, 0);	// Initialize FMOD
 
-	if (result != FMOD_OK)
+	if (m_FMODResult != FMOD_OK)
 	{
-		//printf("FMOD error! (%d) %s\n", result, FMOD_ErrorString(result));
+		//printf("FMOD error! (%d) %s\n", m_FMODResult, FMOD_ErrorString(m_FMODResult));
 		exit(-1);
 	}
 
 	// Music
-	system->createStream("Music\\Theme_A.wav", FMOD_LOOP_NORMAL | FMOD_2D, 0, &stream[0]);
+	m_pFMOD->createStream("Music\\Theme_A.wav", FMOD_LOOP_NORMAL | FMOD_2D, 0, &m_pStream[0]);
 
-	system->createStream("Music\\Theme_B.wav", FMOD_LOOP_NORMAL | FMOD_2D, 0, &stream[1]);
+	m_pFMOD->createStream("Music\\Theme_B.wav", FMOD_LOOP_NORMAL | FMOD_2D, 0, &m_pStream[1]);
 
-	system->createStream("Music\\Theme_C.wav", FMOD_LOOP_NORMAL | FMOD_2D, 0, &stream[2]);
+	m_pFMOD->createStream("Music\\Theme_C.wav", FMOD_LOOP_NORMAL | FMOD_2D, 0, &m_pStream[2]);
 
 	// Sound effects
-	system->createSound("Sounds\\Move.wav", FMOD_DEFAULT, 0, &sound[MOVE]);
+	m_pFMOD->createSound("Sounds\\Move.wav", FMOD_DEFAULT, 0, &m_pSound[MOVE]);
 
-	system->createSound("Sounds\\Rotate.wav", FMOD_DEFAULT, 0, &sound[ROTATE]);
+	m_pFMOD->createSound("Sounds\\Rotate.wav", FMOD_DEFAULT, 0, &m_pSound[ROTATE]);
 
-	system->createSound("Sounds\\Drop_1.wav", FMOD_DEFAULT, 0, &sound[DROP_1]);
+	m_pFMOD->createSound("Sounds\\Drop_1.wav", FMOD_DEFAULT, 0, &m_pSound[DROP_1]);
 
-	system->createSound("Sounds\\Drop_2.wav", FMOD_DEFAULT, 0, &sound[DROP_2]);
+	m_pFMOD->createSound("Sounds\\Drop_2.wav", FMOD_DEFAULT, 0, &m_pSound[DROP_2]);
 
-	system->createSound("Sounds\\Line.wav", FMOD_DEFAULT, 0, &sound[LINE]);
+	m_pFMOD->createSound("Sounds\\Line.wav", FMOD_DEFAULT, 0, &m_pSound[LINE]);
 
-	system->createSound("Sounds\\Game_over.wav", FMOD_DEFAULT, 0, &sound[GAME_OVER]);
+	m_pFMOD->createSound("Sounds\\Game_over.wav", FMOD_DEFAULT, 0, &m_pSound[GAME_OVER]);
 
-	system->createSound("Sounds\\Select.wav", FMOD_DEFAULT, 0, &sound[SELECT]);
+	m_pFMOD->createSound("Sounds\\Select.wav", FMOD_DEFAULT, 0, &m_pSound[SELECT]);
 
 
-	system->playSound(stream[m_nMusic-1], NULL, false, &channel[0]);
+	m_pFMOD->playSound(m_pStream[m_nMusic-1], NULL, false, &m_pChannel[0]);
 
-	channel[0]->setPriority(0);
-	channel[0]->setVolume(0.5f);
+	m_pChannel[0]->setPriority(0);
+	m_pChannel[0]->setVolume(0.5f);
 
-	channel[1]->setPriority(1);
-	channel[1]->setVolume(0.7f);
+	m_pChannel[1]->setPriority(1);
+	m_pChannel[1]->setVolume(0.7f);
 
 
 	// Get pointer to 'game over' bool
@@ -282,7 +282,7 @@ void Framework::Update(float dt)
 	m_pInput->Update();
 
 	// Update FMOD
-	system->update();
+	m_pFMOD->update();
 
 	// Pause menu
 	if (KeyPress(VK_ESCAPE) && !*m_pbGameOver)
@@ -299,20 +299,20 @@ void Framework::Update(float dt)
 		{
 			m_nMenuSelect = 0;
 			
-			Transition(&m_fPauseAlpha, 240.0f, 0.0f, 1000.0f);
+			Transition(&m_fPauseAlpha, 240.0f, 0.0f, 1000.0f, "pause");
 
 			*m_pfPreviewColor = 255.0f;
 
-			channel[0]->setVolume(0.5f);
+			m_pChannel[0]->setVolume(0.5f);
 		}
 
 		else
 		{
-			Transition(&m_fPauseAlpha, 0.0f, 240.0f, 1000.0f);
+			Transition(&m_fPauseAlpha, 0.0f, 240.0f, 1000.0f, "pause");
 
-			Transition(&m_fPauseMenuAlpha, 240.0, 50.0f, 1000.0f);
+			Transition(&m_fPauseMenuAlpha, 240.0, 50.0f, 1000.0f, "pause");
 
-			channel[0]->setVolume(0.25f);
+			m_pChannel[0]->setVolume(0.25f);
 		}
 	}
 
@@ -322,14 +322,14 @@ void Framework::Update(float dt)
 		{
 			++m_nMenuSelect;
 
-			system->playSound(sound[SELECT], NULL, false, &channel[1]);
+			Sound(SELECT, false);
 		}
 
 		if (KeyPress(VK_UP) && m_nMenuSelect > 0)
 		{
 			--m_nMenuSelect;
 
-			system->playSound(sound[SELECT], NULL, false, &channel[1]);
+			Sound(SELECT, false);
 		}
 
 		if (KeyPress(VK_RETURN) || KeyPress(VK_SPACE))
@@ -339,20 +339,20 @@ void Framework::Update(float dt)
 			case 1:
 				Restart();
 
-				Transition(&m_fPauseAlpha, 240.0f, 0.0f, 1000.0f);
+				Transition(&m_fPauseAlpha, 240.0f, 0.0f, 1000.0f, "pause");
 
-				Transition(&m_fPauseMenuAlpha, 50.0f, 240.0f, 1000.0f);
+				Transition(&m_fPauseMenuAlpha, 50.0f, 240.0f, 1000.0f, "pause");
 
 				*m_pfPreviewColor = 255.0f;
 
 			case 0:
-				Transition(&m_fPauseMenuAlpha, 50.0f, 240.0f, 1000.0f);
+				Transition(&m_fPauseMenuAlpha, 50.0f, 240.0f, 1000.0f, "pause");
 
 				m_nMenuSelect = 0;
 
 				m_bPause = false;
 
-				channel[0]->setVolume(0.5f);
+				m_pChannel[0]->setVolume(0.5f);
 
 				break;
 
@@ -377,7 +377,7 @@ void Framework::Update(float dt)
 		{
 			if (!m_bLineSound)
 			{
-				system->playSound(sound[LINE], NULL, false, &channel[1]);
+				Sound(LINE, false);
 
 				m_bLineSound = true;
 			}
@@ -432,7 +432,7 @@ void Framework::Update(float dt)
 					m_fScoreIncrement = 1200 * (m_nLevel + 1);
 				}
 
-				Transition(&m_fScore, m_fScore, m_fScore + m_fScoreIncrement, 5000.0f);
+				Transition(&m_fScore, m_fScore, m_fScore + m_fScoreIncrement, 5000.0f, "score");
 
 				// Update level
 				if (m_nLevel < m_nLines / 10)
@@ -448,7 +448,7 @@ void Framework::Update(float dt)
 
 				m_vLines.clear();
 
-				system->playSound(sound[DROP_2], NULL, false, &channel[1]);
+				Sound(DROP_2, false);
 
 				m_bLineSound = false;
 			}
@@ -462,21 +462,21 @@ void Framework::Update(float dt)
 			{
 				m_grid.MovePiece(-1, 0);
 
-				system->playSound(sound[MOVE], NULL, false, &channel[1]);
+				Sound(MOVE, false);
 			}
 
 			else if (KeyPress(VK_RIGHT))
 			{
 				m_grid.MovePiece(1, 0);
 
-				system->playSound(sound[MOVE], NULL, false, &channel[1]);
+				Sound(MOVE, false);
 			}
 
 			if (KeyPress(VK_UP))
 			{
 				m_grid.RotatePiece();
 
-				system->playSound(sound[ROTATE], NULL, false, &channel[1]);
+				Sound(ROTATE, false);
 			}
 
 			if (KeyPress(VK_DOWN))
@@ -508,7 +508,7 @@ void Framework::Update(float dt)
 	{
 		m_pfPreviewColor = m_grid.PreviewColor();
 		
-		Transition(&m_pfPreviewColor[0], 0.0f, 255.0f, 5000.0f);
+		Transition(&m_pfPreviewColor[0], 0.0f, 255.0f, 5000.0f, "preview");
 	}
 
 	if (m_fAnimTimer > 1.0f)	// Time-based updates
@@ -522,10 +522,10 @@ void Framework::Update(float dt)
 
 		// Pulse score
 		if (m_fScoreAlpha == 150.0f)
-			Transition(&m_fScoreAlpha, 151.0f, 220.0f, 2500.0f);
+			Transition(&m_fScoreAlpha, 151.0f, 220.0f, 2500.0f, "score");
 
 		if (m_fScoreAlpha == 220.0f)
-			Transition(&m_fScoreAlpha, 219.0f, 150.0f, 2500.0f);
+			Transition(&m_fScoreAlpha, 219.0f, 150.0f, 2500.0f, "score");
 
 		// Update transitions
 		if (m_vTransitions.size())
@@ -558,7 +558,7 @@ void Framework::Update(float dt)
 
 		if (m_fEventTimer > 1500.0f)
 		{
-			Transition(&m_fEventAlpha, 240.0f, 0.0f, 5000.0f);
+			Transition(&m_fEventAlpha, 240.0f, 0.0f, 5000.0f, "event");
 
 			m_fEventTimer = -1.0f;
 		}
@@ -604,9 +604,9 @@ void Framework::Update(float dt)
 
 		if (!m_bEndSound)
 		{
-			channel[0]->stop();
+			m_pChannel[0]->stop();
 
-			system->playSound(sound[GAME_OVER], NULL, false, &channel[1]);
+			Sound(GAME_OVER, false);
 
 			m_bEndSound = true;
 		}
@@ -619,31 +619,39 @@ void Framework::Update(float dt)
 		{
 			m_bAudio = false;
 
-			EventMsg("AUDIO: DISABLED");
+			m_bSounds = false;
+
+			m_nMusic = 0;
+
+			m_pChannel[0]->setPaused(true);
+
+			EventMsg("AUDIO: OFF");
 		}
 
 		else
 		{
 			m_bAudio = true;
 
-			EventMsg("AUDIO: ENABLED");
+			EventMsg("AUDIO: ON");
 		}
 	}
 
-	if (KeyPress('E'))	// Sound effects
+	if (KeyPress('S'))	// Sound effects
 	{
 		if (m_bSounds)
 		{
 			m_bSounds = false;
 
-			EventMsg("EFFECTS: DISABLED");
+			EventMsg("SOUND EFFECTS: OFF");
 		}
 
 		else
 		{
 			m_bSounds = true;
 
-			EventMsg("EFFECTS: ENABLED");
+			m_bAudio = true;
+
+			EventMsg("SOUND EFFECTS: ON");
 		}
 	}
 
@@ -651,36 +659,42 @@ void Framework::Update(float dt)
 	{
 		m_nMusic = m_nMusic < 3 ? m_nMusic + 1 : 0;
 
-		channel[0]->setPaused(true);
+		m_pChannel[0]->setPaused(true);
 
 		switch (m_nMusic)
 		{
 		case 0:
-			EventMsg("MUSIC: DISABLED");
+			EventMsg("MUSIC: OFF");
 
 			break;
 
 		case 1:
-			system->playSound(stream[0], NULL, false, &channel[0]);
+			m_pFMOD->playSound(m_pStream[0], NULL, false, &m_pChannel[0]);
+
+			m_bAudio = true;
 
 			EventMsg("MUSIC: THEME A");
 
 			break;
 
 		case 2:
-			system->playSound(stream[1], NULL, false, &channel[0]);
+			m_pFMOD->playSound(m_pStream[1], NULL, false, &m_pChannel[0]);
+
+			m_bAudio = true;
 
 			EventMsg("MUSIC: THEME B");
 
 			break;
 
 		case 3:
-			system->playSound(stream[2], NULL, false, &channel[0]);
+			m_pFMOD->playSound(m_pStream[2], NULL, false, &m_pChannel[0]);
+
+			m_bAudio = true;
 
 			EventMsg("MUSIC: THEME C");
 		}
 
-		channel[0]->setVolume(0.5f);
+		m_pChannel[0]->setVolume(0.5f);
 	}
 }
 
@@ -921,13 +935,27 @@ void Framework::Transform(float a_scaleX, float a_scaleY, float a_rot, float a_t
 	m_pD3DSprite->SetTransform(&m_worldMat);
 }
 
-void Framework::Transition(float* a_value, float a_begin, float a_end, float a_duration)
+void Framework::Transition(float* a_value, float a_begin, float a_end, float a_duration, std::string a_id)
 {
 	float delta = a_end - a_begin,
 		
 		increment = delta / (a_duration / 16);
 
-	m_vTransitions.push_back(Trans(a_value, a_end, increment));
+	m_vTransitions.push_back(Trans(a_value, a_end, increment, a_id));
+}
+
+void Framework::Cancel(std::string arg)
+{
+	for (auto i = begin (m_vTransitions); i != end (m_vTransitions); ++i)
+	{
+		if (i->id == arg)
+		{
+			m_vTransitions.erase(i);
+
+			if (m_vTransitions.size())
+				i = begin(m_vTransitions);
+		}
+	}
 }
 
 void Framework::UpdateTime()
@@ -981,11 +1009,19 @@ void Framework::Restart()
 	m_pfPreviewColor = m_grid.PreviewColor();
 }
 
+void Framework::Sound(SOUND a_sound, bool a_pause)
+{
+	if (m_bSounds && m_bAudio)
+		m_pFMOD->playSound(m_pSound[a_sound], NULL, a_pause, &m_pChannel[1]);
+}
+
 void Framework::EventMsg(std::string arg)
 {
 	m_sEventText = arg;
 
-	Transition(&m_fEventAlpha, 0.0f, 250.0f, 850.0f);
+	Cancel("event");
+
+	Transition(&m_fEventAlpha, 0.0f, 250.0f, 850.0f, "event");
 
 	m_fEventTimer = 0.0f;
 }
@@ -997,7 +1033,7 @@ Framework::~Framework()
 
 void Framework::Shutdown()
 {
-	system->release();
+	m_pFMOD->release();
 
 	SAFE_RELEASE(m_pD3DSprite);
 

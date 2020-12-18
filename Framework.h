@@ -42,14 +42,14 @@ class Framework
 						m_worldMat;
 
 	// FMOD
-	FMOD_RESULT result;
+	FMOD_RESULT m_FMODResult;
 
-	FMOD::System *system;
+	FMOD::System *m_pFMOD;
 
-	FMOD::Sound *sound[7],
-			*stream[3];
+	FMOD::Sound *m_pSound[7],
+			*m_pStream[3];
 
-	FMOD::Channel* channel[2];
+	FMOD::Channel *m_pChannel[2];
 
 	enum SOUND
 	{
@@ -69,11 +69,13 @@ class Framework
 			endValue,
 			increment;
 
-		Trans()
-			:currentValue(NULL), endValue(0.0f), increment(0.0f) {}
+		std::string id;
 
-		Trans(float* a_current, float a_end, float a_increment)
-			:currentValue(a_current), endValue(a_end), increment(a_increment) {}
+		Trans()
+			:currentValue(NULL), endValue(0.0f), increment(0.0f), id("") {}
+
+		Trans(float* a_current, float a_end, float a_increment, std::string a_id)
+			:currentValue(a_current), endValue(a_end), increment(a_increment), id(a_id) {}
 	};
 
 	std::vector<Trans> m_vTransitions;
@@ -141,13 +143,17 @@ public:
 
 	void Transform(float, float, float, float, float);
 
-	void Transition(float*, float, float, float);
+	void Transition(float*, float, float, float, std::string);
+
+	void Cancel(std::string);
 
 	void UpdateTime();
 
 	bool KeyPress(int);
 
 	void Restart();
+
+	void Sound(SOUND, bool);
 
 	void EventMsg(std::string);
 

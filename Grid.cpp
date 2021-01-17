@@ -11,7 +11,9 @@ Grid::Grid()
 		}
 	}
 
-	m_fTick = m_fTickRate = 850.0f;
+	m_fTick = 45.0f;
+
+	m_fTickRate = 1.0f;
 
 	m_fElapsed = 0.0f;
 
@@ -32,9 +34,9 @@ bool* Grid::GetGameOver()
 	return &m_bGameOver;
 }
 
-void Grid::Update(float a_dt)
+void Grid::Update()
 {
-	m_fElapsed += a_dt;
+	m_fElapsed += m_fTickRate;
 
 	// Update grid every tick
 	if (m_fElapsed > m_fTick && !m_bGameOver)
@@ -89,7 +91,7 @@ void Grid::Update(float a_dt)
 	}
 
 	// Soft drop
-	m_fTick = m_bAccelerate ? 50.0f : m_fTickRate;
+	m_fTickRate = m_bAccelerate ? 13.0f : 1.0f;
 }
 
 int Grid::PreviewType()

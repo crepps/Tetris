@@ -69,7 +69,7 @@ public:
 
 	bool* GetGameOver();
 
-	void Update(float);
+	void Update();
 
 	int PreviewType();
 

@@ -128,7 +128,7 @@ class Framework
 		m_fEventTimer,
 		*m_pfPreviewColor;
 
-	std::wstring m_sTime;
+	std::wstring m_sClock;
 
 	std::string m_sEventText;
 
@@ -147,7 +147,7 @@ public:
 
 	void Cancel(std::string);
 
-	void UpdateTime();
+	void UpdateClock();
 
 	bool KeyPress(int);
 
@@ -161,9 +161,3 @@ public:
 
 	void Shutdown();
 };
-
-/*
-
-From level 0 to 8, a player has to clear 10 lines to reach the next level. From level 9 to 20, it's 20 lines to the next level.
-
-*/

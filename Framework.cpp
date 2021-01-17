@@ -19,9 +19,9 @@ Framework::Framework()
 
 	m_bAudio = m_bSounds = true;
 
-	m_fScore = m_fAnimTimer = m_fLineTimer = m_fBackRot = m_fPauseAlpha = m_fEventAlpha = m_fEndTimer = 0.0f;
+	m_fScore = m_fLineTimer = m_fBackRot = m_fPauseAlpha = m_fEventAlpha = m_fEndTimer = 0.0f;
 
-	m_fBackRotBase = m_fBackRotRate = 0.02f;
+	m_fBackRotBase = m_fBackRotRate = 0.1f;
 
 	m_fScoreAlpha = 150.0f;
 
@@ -31,7 +31,7 @@ Framework::Framework()
 
 	m_fEventTimer = -1.0f;
 
-	m_sTime = L"0:00";
+	m_sClock = L"0:00";
 
 	m_sEventText = "";
 
@@ -299,7 +299,7 @@ void Framework::Update(float dt)
 		{
 			m_nMenuSelect = 0;
 			
-			Transition(&m_fPauseAlpha, 240.0f, 0.0f, 1000.0f, "pause");
+			Transition(&m_fPauseAlpha, 240.0f, 0.0f, 300.0f, "pause");
 
 			*m_pfPreviewColor = 255.0f;
 
@@ -308,9 +308,9 @@ void Framework::Update(float dt)
 
 		else
 		{
-			Transition(&m_fPauseAlpha, 0.0f, 240.0f, 1000.0f, "pause");
+			Transition(&m_fPauseAlpha, 0.0f, 240.0f, 300.0f, "pause");
 
-			Transition(&m_fPauseMenuAlpha, 240.0, 50.0f, 1000.0f, "pause");
+			Transition(&m_fPauseMenuAlpha, 240.0, 50.0f, 300.0f, "pause");
 
 			m_pChannel[0]->setVolume(0.25f);
 		}
@@ -339,14 +339,14 @@ void Framework::Update(float dt)
 			case 1:
 				Restart();
 
-				Transition(&m_fPauseAlpha, 240.0f, 0.0f, 1000.0f, "pause");
+				Transition(&m_fPauseAlpha, 240.0f, 0.0f, 250.0f, "pause");
 
-				Transition(&m_fPauseMenuAlpha, 50.0f, 240.0f, 1000.0f, "pause");
+				Transition(&m_fPauseMenuAlpha, 50.0f, 240.0f, 250.0f, "pause");
 
 				*m_pfPreviewColor = 255.0f;
 
 			case 0:
-				Transition(&m_fPauseMenuAlpha, 50.0f, 240.0f, 1000.0f, "pause");
+				Transition(&m_fPauseMenuAlpha, 50.0f, 240.0f, 250.0f, "pause");
 
 				m_nMenuSelect = 0;
 
@@ -366,7 +366,7 @@ void Framework::Update(float dt)
 	if (!*m_pbGameOver && !m_bPause)
 	{
 		// Update time elapsed
-		UpdateTime();
+		UpdateClock();
 
 		// Check for lines
 		if (m_grid.GetLines().size())
@@ -382,30 +382,25 @@ void Framework::Update(float dt)
 				m_bLineSound = true;
 			}
 
-			// Increment line timer with delta time
-			m_fLineTimer += dt * 0.0075f;
+			m_fLineTimer += 1.1f;
 
-			if ((int)m_fLineTimer % (int)m_fFlashTime == 0)
+		
+			if ((int)(m_fLineTimer * 0.1f) % 2 == 0)
+				m_bFlashing = true;
+
+			else
 			{
-				if ((int)m_fLineTimer % 2 == 0)
-					m_bFlashing = true;
+				m_bFlashing = false;
 
-				else
+				if (m_fLineTimer >= 72.0f)
 				{
-					m_bFlashing = false;
-
-					if (m_fLineTimer >= 7.0f)
-					{
-						for (int i = 0; i < m_vLines.size(); ++i)
-							m_grid.EmptyLine(m_vLines[i]);
-
-						// Update background rotation speed based on level
-						m_fBackRotRate = (m_nLevel ? (float)m_nLevel * m_fBackRotBase : m_fBackRotRate);
-					}
+					for (int i = 0; i < m_vLines.size(); ++i)
+						m_grid.EmptyLine(m_vLines[i]);
 				}
 			}
+		
 
-			if (m_fLineTimer > m_fFlashTime * 8.0f)
+			if (m_fLineTimer > 72.0f)
 			{
 				// Accumulate number of lines
 				m_nLines += m_vLines.size();
@@ -432,9 +427,9 @@ void Framework::Update(float dt)
 					m_fScoreIncrement = 1200 * (m_nLevel + 1);
 				}
 
-				Transition(&m_fScore, m_fScore, m_fScore + m_fScoreIncrement, 5000.0f, "score");
+				Transition(&m_fScore, m_fScore, m_fScore + m_fScoreIncrement, 200.0f, "score");
 
-				// Update level
+				// Update level if enough lines
 				if (m_nLevel < m_nLines / 10)
 					m_grid.IncreaseSpeed();
 
@@ -447,6 +442,8 @@ void Framework::Update(float dt)
 				m_grid.DropLines();
 
 				m_vLines.clear();
+
+				m_fBackRotRate = (m_nLevel ? (float)m_nLevel * m_fBackRotBase : m_fBackRot);
 
 				Sound(DROP_2, false);
 
@@ -495,70 +492,66 @@ void Framework::Update(float dt)
 
 		// Interrupt soft drop on piece dropped?
 		if (m_grid.PieceDropped())
+		{
 			m_grid.Accelerate(false);
 
+			m_pInput->keyDown[VK_DOWN] = true;
+		}
+
 		// Update grid
-		m_grid.Update(dt);
+		m_grid.Update();
 	}
 
 	// Animation updates
-	m_fAnimTimer += dt;
-
 	if (m_grid.PieceDropped())
 	{
 		m_pfPreviewColor = m_grid.PreviewColor();
 		
-		Transition(&m_pfPreviewColor[0], 0.0f, 255.0f, 5000.0f, "preview");
+		Transition(&m_pfPreviewColor[0], 0.0f, 255.0f, 700.0f, "preview");
 	}
 
-	if (m_fAnimTimer > 1.0f)	// Time-based updates
+
+	if (!m_bPause)
 	{
-		if (!m_bPause)
+		// Rotate background
+		if (!*m_pbGameOver)
+			m_fBackRot = m_fBackRot >= 360.0f ? 0.0f : m_fBackRot + m_fBackRotRate;
+	}
+
+	// Pulse score
+	if (m_fScoreAlpha == 150.0f)
+		Transition(&m_fScoreAlpha, 151.0f, 220.0f, 500.0f, "score");
+
+	if (m_fScoreAlpha == 220.0f)
+		Transition(&m_fScoreAlpha, 219.0f, 150.0f, 500.0f, "score");
+
+	// Update transitions
+	if (m_vTransitions.size())
+	{
+		for (int i = 0; i < m_vTransitions.size(); ++i)
 		{
-			// Rotate background
-			if (!*m_pbGameOver)
-				m_fBackRot = m_fBackRot >= 360.0f ? 0.0f : m_fBackRot + m_fBackRotRate;
-		}
+			*m_vTransitions[i].currentValue += m_vTransitions[i].increment;
 
-		// Pulse score
-		if (m_fScoreAlpha == 150.0f)
-			Transition(&m_fScoreAlpha, 151.0f, 220.0f, 2500.0f, "score");
-
-		if (m_fScoreAlpha == 220.0f)
-			Transition(&m_fScoreAlpha, 219.0f, 150.0f, 2500.0f, "score");
-
-		// Update transitions
-		if (m_vTransitions.size())
-		{
-			for (int i = 0; i < m_vTransitions.size(); ++i)
+			if ((m_vTransitions[i].increment > 0.0f && *m_vTransitions[i].currentValue >= m_vTransitions[i].endValue)
+				|| (m_vTransitions[i].increment < 0.0f && *m_vTransitions[i].currentValue <= m_vTransitions[i].endValue))
 			{
-				if ((m_vTransitions[i].increment > 0 && *m_vTransitions[i].currentValue >= m_vTransitions[i].endValue)
-					|| (m_vTransitions[i].increment < 0 && *m_vTransitions[i].currentValue <= m_vTransitions[i].endValue))
-				{
-					*m_vTransitions[i].currentValue = m_vTransitions[i].endValue;
+				*m_vTransitions[i].currentValue = m_vTransitions[i].endValue;
 
-					m_vTransitions.erase(m_vTransitions.begin() + i);
-				}
-
-				else
-				{
-					*m_vTransitions[i].currentValue += m_vTransitions[i].increment;
-				}
+				m_vTransitions.erase(m_vTransitions.begin() + i);
 			}
 		}
-
-		// Reset animation timer
-		m_fAnimTimer = 0.0f;
 	}
 
 	// Update event message timer
 	if (m_fEventTimer >= 0.0f)
 	{
-		m_fEventTimer += dt;
+		m_fEventTimer += 1.0f;
 
-		if (m_fEventTimer > 1500.0f)
+		if (m_fEventTimer > 180.0f)
 		{
-			Transition(&m_fEventAlpha, 240.0f, 0.0f, 5000.0f, "event");
+			Cancel("event");
+
+			Transition(&m_fEventAlpha, 240.0f, 0.0f, 500.0f, "event");
 
 			m_fEventTimer = -1.0f;
 		}
@@ -567,11 +560,11 @@ void Framework::Update(float dt)
 	// Game over animation
 	if (*m_pbGameOver)
 	{
-		m_fEndTimer += dt;
+		m_fEndTimer += 1.3f;
 
 		if (!m_abGridFill[0] || m_abGridFill[1])
 		{
-			if (m_fEndTimer >= 25.0f)
+			if (m_fEndTimer >= 2.0f)
 			{
 				for (int i = 17; i >= 0; --i)
 				{
@@ -592,7 +585,7 @@ void Framework::Update(float dt)
 
 		else
 		{
-			if (m_fEndTimer > 800.0f)
+			if (m_fEndTimer > 75.0f)
 			{
 				m_grid.ClearGrid();
 
@@ -631,6 +624,8 @@ void Framework::Update(float dt)
 		else
 		{
 			m_bAudio = true;
+
+			m_bSounds = true;
 
 			EventMsg("AUDIO: ON");
 		}
@@ -853,7 +848,7 @@ void Framework::Render()
 
 			m_textRect.top += 95;
 
-			swprintf_s(m_acTextBuffer, 64, L"%s", m_sTime.c_str());
+			swprintf_s(m_acTextBuffer, 64, L"%s", m_sClock.c_str());
 
 			m_pD3DFont[3]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_CENTER, D3DCOLOR_ARGB(240, 170, 170, 170));
 
@@ -908,7 +903,7 @@ void Framework::Render()
 
 			m_textRect.top += 25;
 
-			swprintf_s(m_acTextBuffer, 64, L"Event timer: %i", (int)m_fEventTimer);
+			swprintf_s(m_acTextBuffer, 64, L"Event alpha: %f", m_fEventAlpha);
 
 			m_pD3DFont[0]->DrawText(0, m_acTextBuffer, -1, &m_textRect, DT_NOCLIP | DT_LEFT, D3DCOLOR_ARGB(240, 200, 200, 200));
 
@@ -937,9 +932,10 @@ void Framework::Transform(float a_scaleX, float a_scaleY, float a_rot, float a_t
 
 void Framework::Transition(float* a_value, float a_begin, float a_end, float a_duration, std::string a_id)
 {
+	const float fps = 60.0f;
 	float delta = a_end - a_begin,
 		
-		increment = delta / (a_duration / 16);
+		increment = delta / ((a_duration * 0.001) * fps);
 
 	m_vTransitions.push_back(Trans(a_value, a_end, increment, a_id));
 }
@@ -958,7 +954,7 @@ void Framework::Cancel(std::string arg)
 	}
 }
 
-void Framework::UpdateTime()
+void Framework::UpdateClock()
 {
 	if (m_nRawTime != time(0))
 	{
@@ -976,7 +972,7 @@ void Framework::UpdateTime()
 
 		ss << std::setw(2) << std::setfill(wchar_t('0')) << (m_nSeconds > 60 ? m_nSeconds % 60 : m_nSeconds);
 
-		m_sTime = ss.str();
+		m_sClock = ss.str();
 	}
 }
 
@@ -1004,7 +1000,7 @@ void Framework::Restart()
 
 	m_fBackRotBase = m_fBackRotRate = 0.02f;
 
-	m_sTime = L"0:00";
+	m_sClock = L"0:00";
 
 	m_pfPreviewColor = m_grid.PreviewColor();
 }
@@ -1021,7 +1017,7 @@ void Framework::EventMsg(std::string arg)
 
 	Cancel("event");
 
-	Transition(&m_fEventAlpha, 0.0f, 250.0f, 850.0f, "event");
+	Transition(&m_fEventAlpha, 0.0f, 250.0f, 215.0f, "event");
 
 	m_fEventTimer = 0.0f;
 }

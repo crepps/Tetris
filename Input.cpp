@@ -14,5 +14,5 @@ void Input::Update()
 			keyDown[i] = false;
 	}
 
-	Sleep(1);
+	//Sleep(1);
 }

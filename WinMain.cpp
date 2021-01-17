@@ -1,5 +1,6 @@
 #include "Include.h"
 #include "Framework.h"
+#include <chrono>
 
 #define SCREEN_WIDTH 1920
 #define SCREEN_HEIGHT 1080
@@ -36,7 +37,7 @@ void InitWindow(void)
 	wndClass.hCursor = LoadCursor(NULL, IDC_ARROW);
 	wndClass.hbrBackground = (HBRUSH)(COLOR_WINDOWFRAME);
 
-	// register a new type of window
+	// Register a new type of window
 	RegisterClassEx(&wndClass);
 
 	MainWindowHandle = CreateWindow(
@@ -54,7 +55,7 @@ void InitWindow(void)
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
 {
 	hInstance = g_hInstance;
-	bool g_bWindowed = false;	// Windowed mode or full-screen
+	bool g_bWindowed = false;	// Windowed or full-screen
 
 	// Initialize once
 	__int64 cntsPerSec = 0;
@@ -70,21 +71,34 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLi
 	// Init the window
 	InitWindow();
 
-	// Use this msg structure to catch window messages
+	// msg structure to catch window messages
 	MSG msg;
+
 	ZeroMemory(&msg, sizeof(msg));
 
-	// Initialize DirectX/controller class
+	// Initialize controller class
 	dxObj.Init(MainWindowHandle, hInstance, &g_input, g_bWindowed);
 
-	time_t now, lastclock(clock());
-	float dt;
+	float dt, elapsed(0.0f);
 
-	// Main windows/game loop
+	const float fps(60.0f);
+
+	const float increment = (1000.0f / fps);
+
+	std::chrono::high_resolution_clock::time_point t1, t2(std::chrono::high_resolution_clock::now());
+
+	std::chrono::duration<float, std::milli> delta;
+
+	// Main game loop
 	while (msg.message != WM_QUIT)
 	{
-		now = clock();
-		dt = now - lastclock; // Delta time
+		t1 = std::chrono::high_resolution_clock::now();
+
+		delta = t1 - t2;
+
+		elapsed += dt = delta.count();
+
+		t2 = t1;
 
 		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
@@ -92,12 +106,17 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLi
 			DispatchMessage(&msg);
 		}
 
-		dxObj.Update(dt);
+		if (elapsed >= increment)
+		{
+			dxObj.Update(dt);
+			
+			elapsed -= increment;
+		}
+
 		dxObj.Render();
 
-		lastclock = now;
+		Sleep(1);
 	}
-
 
 	dxObj.Shutdown();
 
